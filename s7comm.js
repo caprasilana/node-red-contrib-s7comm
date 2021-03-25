@@ -1,5 +1,6 @@
 /**
  * Copyright (c) 2017 Hilscher Gesellschaft fuer Systemautomation mbH
+ * Fork by Caprasiana @2021
  * See LICENSE
  * $Id:  $:
  * Description:
@@ -18,7 +19,7 @@ try {
   // Because net-keepalive depends on the OS
   NetKeepAlive = require('net-keepalive');
 } catch (er) {
-  console.log('' + timestamp().format_NodeRed + ' - ' +'[s7comm-Error] - Installation of Module net-keepalive failed because we might be on the wrong OS. OS=' + process.platform);
+  console.log('' + timestamp().format_NodeRed + ' - ' + '[s7comm-Error] - Installation of Module net-keepalive failed because we might be on the wrong OS. OS=' + process.platform);
   NetKeepAlive = null;
 }
 
@@ -36,7 +37,7 @@ let config = null;
 try {
   config = require('./config.json');
 } catch (er) {
-  console.log('' + timestamp().format_NodeRed + ' - ' +'[s7comm-Error] - Error during parsing of config.json. Set Default values.',);
+  console.log('' + timestamp().format_NodeRed + ' - ' + '[s7comm-Error] - Error during parsing of config.json. Set Default values.',);
   // set default values
   logLevelNodeS7 = logLevelNodeS7Default;
   logLevelNodeRED = logLevelNodeREDDefault;
@@ -55,7 +56,7 @@ function setConfiguration() {
       logLevelNodeS7.debug = config.logLevelNodeS7.debug;
       logLevelNodeS7.silent = config.logLevelNodeS7.silent;
     } else {
-      console.log('' + timestamp().format_NodeRed + ' - ' +'[s7comm-Error] - Error during parsing of config.json. Set default values for logLevelNodeS7.');
+      console.log('' + timestamp().format_NodeRed + ' - ' + '[s7comm-Error] - Error during parsing of config.json. Set default values for logLevelNodeS7.');
       logLevelNodeS7 = logLevelNodeS7Default;
     }
 
@@ -69,12 +70,12 @@ function setConfiguration() {
       logLevelNodeRED.debug = config.logLevelNodeRED.debug;
       logLevelNodeRED.silent = config.logLevelNodeRED.silent;
     } else {
-      console.log('' + timestamp().format_NodeRed + ' - ' +'[s7comm-Error] - Error during parsing of config.json. Set default values for logLevelNodeRED.');
+      console.log('' + timestamp().format_NodeRed + ' - ' + '[s7comm-Error] - Error during parsing of config.json. Set default values for logLevelNodeRED.');
       logLevelNodeRED = logLevelNodeREDDefault;
     }
   }
-  console.log('' + timestamp().format_NodeRed + ' - ' +'[s7comm-Info] - Debug configuration for logLevelNodeS7:' + JSON.stringify(logLevelNodeS7));
-  console.log('' + timestamp().format_NodeRed + ' - ' +'[s7comm-Info] - Debug configuration for logLevelNodeRED:' + JSON.stringify(logLevelNodeRED));
+  console.log('' + timestamp().format_NodeRed + ' - ' + '[s7comm-Info] - Debug configuration for logLevelNodeS7:' + JSON.stringify(logLevelNodeS7));
+  console.log('' + timestamp().format_NodeRed + ' - ' + '[s7comm-Info] - Debug configuration for logLevelNodeRED:' + JSON.stringify(logLevelNodeRED));
 }
 // set Configuration once Node-RED parses the file
 setConfiguration();
@@ -429,7 +430,7 @@ module.exports = (RED) => {
     /**
      * @description This function returns a JSON Object which is used for sending to the nodes output
      * @param {Object} node- A node object from the Node-RED Instance
-     * @param {String} path- Name of the signal within S7-Object
+     * @param {String} path- Name of the tag within S7-Object
      * @param {Number} err- Errorvalue of PLC response (comes from checkReceivedData)
      * @param {Array} val- Return value of PLC response(comes from checkReceivedData)
      * @returns {Object} JSON-Object of each Request
@@ -441,7 +442,7 @@ module.exports = (RED) => {
       const ret = {
         topic: myNode.topic,
         payload: {
-          signal: myNode.dataHandle.rcvData.S7_Name,
+          tag: myNode.dataHandle.rcvData.S7_Name,
           path: s7path,
           error: err,
           value: val,
@@ -454,7 +455,7 @@ module.exports = (RED) => {
      * @description Give this function an S7 Object and it'll return the Datatype.
      * @param {Object} S7Object - The S7-Object that comes from the HTML-Page
      * @param {Number} choose -  Choose 0 or 1 for different format. 1 for using with DB, 0 for using with the rest
-     * @returns {String} A string that shows the Datatype of the input Signal
+     * @returns {String} A string that shows the Datatype of the input Tag
      * @todo Extend this Function when using more Datatypes e.g Int,DInt ...
      * @example 
      * getDataTypeAsString(S7Object,1)  //S7Object={S7_Type:'' ,S7_DBnum:'0',S7_Datatype:'',S7_Offset:'0',S7_BitOffset:'0',S7_Quantity:'0',S7_Name:''}
@@ -665,11 +666,13 @@ module.exports = (RED) => {
         // Trigger single Reading once, because if intervall reading is huge
         // and we get an external input we get an reading error.
         outputLog('[s7comm-Info] - Single reading once to init values (PLC ' + node.RFCParam.host.toString() + ').', 2);
-        node.plc.readAllItems((anythingBad, values) => {
-          node.status.reading = false;
-          node.readDataBuffer.anythingBad = anythingBad;
-          node.readDataBuffer.values = values;
-        });
+        if (node.plc) {
+          node.plc.readAllItems((anythingBad, values) => {
+            node.status.reading = false;
+            node.readDataBuffer.anythingBad = anythingBad;
+            node.readDataBuffer.values = values;
+          });
+        }
 
         // Trigger Interval Reading.
         if (node.status.numOfReadNodes >= 1 && node.status.numOfReadIntervallNodes >= 1) {
@@ -764,14 +767,16 @@ module.exports = (RED) => {
       if (nextElem) {
         outputLog('[s7comm-Info] - Single reading process (PLC ' + node.RFCParam.host.toString() + ') is starting.', 2);
         node.status.reading = true;
-        node.plc.readAllItems((anythingBad, values) => {
-          outputLog('[s7comm-Info] - Single reading process (PLC ' + node.RFCParam.host.toString() + ') done. Bad Values:' + anythingBad, 2);
-          node.status.reading = false;
-          node.readDataBuffer.anythingBad = anythingBad;
-          node.readDataBuffer.values = values;
-          node.readingComplete(nextElem);
-          singleReading();
-        });
+        if (node.plc) {
+          node.plc.readAllItems((anythingBad, values) => {
+            outputLog('[s7comm-Info] - Single reading process (PLC ' + node.RFCParam.host.toString() + ') done. Bad Values:' + anythingBad, 2);
+            node.status.reading = false;
+            node.readDataBuffer.anythingBad = anythingBad;
+            node.readDataBuffer.values = values;
+            node.readingComplete(nextElem);
+            singleReading();
+          });
+        }
       } else {
         outputLog('[s7comm-Info] - Reading Queue empty. Configuration:[' + node.id + '].', 2);
       }
@@ -780,13 +785,15 @@ module.exports = (RED) => {
     function cyclicReading() {
       outputLog('[s7comm-Function] - cyclicReading. Configuration:[' + node.id + '].', 3);
       node.status.reading = true;
-      node.plc.readAllItems((anythingBad, values) => {
-        outputLog('[s7comm-Info] - Iteration of cyclic reading process from PLC ' + node.RFCParam.host.toString() + ' done.', 2);
-        node.status.rwCyclError = anythingBad; // Patch. Can be removed when connection Establishment Issue is solved.
-        node.status.reading = false;
-        node.readDataBuffer.anythingBad = anythingBad;
-        node.readDataBuffer.values = values;
-      });
+      if (node.plc) {
+        node.plc.readAllItems((anythingBad, values) => {
+          outputLog('[s7comm-Info] - Iteration of cyclic reading process from PLC ' + node.RFCParam.host.toString() + ' done.', 2);
+          node.status.rwCyclError = anythingBad; // Patch. Can be removed when connection Establishment Issue is solved.
+          node.status.reading = false;
+          node.readDataBuffer.anythingBad = anythingBad;
+          node.readDataBuffer.values = values;
+        });
+      }
     }
 
     function singleWriting() {
@@ -839,7 +846,7 @@ module.exports = (RED) => {
       // Input:  value.payload={'value':[1]}
       // Return: val= { error: false, value: [ 2 ] }
       outputLog('[s7comm-Function] - checkWritingValue. Configuration:[' + node.id + '].', 3);
-      
+
       let ret = null;
       const tmp = [];
       let err = null;
@@ -1055,7 +1062,7 @@ module.exports = (RED) => {
       const wrappedPath = wrapData(myNode.dataHandle.rcvData, 'path');
 
       if (wrappedData === null) {
-        outputLog('[s7comm-Error] - No Signal selected within the reading node. WrappedData:' + wrappedData, 0);
+        outputLog('[s7comm-Error] - No Tag selected within the reading node. WrappedData:' + wrappedData, 0);
         /* eslint-disable-next-line */
         myNode.NodeConfig.readJSON = getJSON(myNode, wrappedPath, -1, FilledArray(myNode.dataHandle.rcvData.S7_Quantity, null));
         myNode.send(myNode.NodeConfig.readJSON);
@@ -1126,7 +1133,7 @@ module.exports = (RED) => {
           myNode.NodeConfig.readJSON = getJSON(myNode, wrappedPath, -1, FilledArray(myNode.dataHandle.rcvData.S7_Quantity, null));
         }
         /* eslint-disable-next-line */
-        
+
         myNode.send(myNode.NodeConfig.readJSON);
       }
     };

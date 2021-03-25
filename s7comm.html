@@ -1,5 +1,6 @@
 <!-- **********************************************************************************
 Copyright (c) 2017 Hilscher Gesellschaft fuer Systemautomation mbH.
+Fork by Caprasiana @2021
 See LICENSE
 ***************************************************************************************
 Description:
@@ -60,10 +61,10 @@ A Node-RED node to communicate with Siemens S7 PLCs.
 	<input type="text" id="node-input-connection">
 </div>
 
-<!-- Element: Signal -->
+<!-- Element: Tag -->
 <div class="form-row">
-	<label for="node-input-signal"><i class="fa fa-envelope"></i> Signal</label>
-	<select id="node-input-signal" style="width: 70%"></select>
+	<label for="node-input-tag"><i class="fa fa-envelope"></i> Tag</label>
+	<select id="node-input-tag" style="width: 70%"></select>
 </div>
 
 <!-- Element: Intervall -->
@@ -108,13 +109,13 @@ A Node-RED node to communicate with Siemens S7 PLCs.
 
 <script type="text/x-red" data-help-name="s7comm read">
 <p>The node reads data from Siemens devices such as S7-300/400/1200/1500.</p>
-<p>The signals to be read are setup in the node's connection selector. The repeat function allows sending 
+<p>The tags to be read are setup in the node's connection selector. The repeat function allows sending 
 requests either periodically or if disabled triggered by any node's input message.
 </br>
 </br>
 The node outputs a msg.payload in the following format:</p>
-<p style="padding-left: 10px;"><b>payload.signal :</b> Symbolic name of the signal as configured,</p>
-<p style="padding-left: 10px;"><b>payload.path :</b> Signal path of the signal,</p>
+<p style="padding-left: 10px;"><b>payload.tag :</b> Symbolic name of the tag as configured,</p>
+<p style="padding-left: 10px;"><b>payload.path :</b> Tag path of the tag,</p>
 <p style="padding-left: 10px;"><b>payload.error :</b> Error value: 0 = no error, -1 = reading failed ,</p>
 <p style="padding-left: 10px;"><b>payload.value :</b> Read data as array. The returned data can be either:</p>
 <p style="padding-left: 30px;"><em>null</em>: in case of an error;</p>
@@ -130,13 +131,13 @@ Node status:</p>
 </br>
 Example payload of output msg:</br>
 1) Reading Q0.1, return value is true and valid:</br>
-<div style="padding-left: 17px;"> {topic:"Input_hall#1", payload:{signal: "machine#1", path:"Q0.1",error:0, value:[true] }, _msgid: "92e3f0cc.6d1c1"} </div></br>
+<div style="padding-left: 17px;"> {topic:"Input_hall#1", payload:{tag: "machine#1", path:"Q0.1",error:0, value:[true] }, _msgid: "92e3f0cc.6d1c1"} </div></br>
 2) Reading QB1, return value is 100 and valid:</br>
-<div style="padding-left: 17px;"> {topic:"Input_hall#1", payload:{signal: "machine#1", path:"QB1",error:0, value:[100] }, _msgid: "92e3f0cc.6d1c1"} </div></br>
+<div style="padding-left: 17px;"> {topic:"Input_hall#1", payload:{tag: "machine#1", path:"QB1",error:0, value:[100] }, _msgid: "92e3f0cc.6d1c1"} </div></br>
 3) Reading QB0-QB3, return value is [1,2,3,4] and valid:</br>
-<div style="padding-left: 17px;"> {topic:"Input_hall#1", payload:{signal: "machine#1", path:"QB0..3",error:0, value:[1,2,3,4] }, _msgid: "92e3f0cc.6d1c1"} </div></br>
+<div style="padding-left: 17px;"> {topic:"Input_hall#1", payload:{tag: "machine#1", path:"QB0..3",error:0, value:[1,2,3,4] }, _msgid: "92e3f0cc.6d1c1"} </div></br>
 4) Reading DB11.DBB0 - DB11.DBB3, return value is [null,null,null,null] and invalid because DB11 does not exist:</br>
-<div style="padding-left: 17px;"> {topic:"Input_hall#1", payload:{signal: "machine#1", path:"DB10,BYTE0..3",error:-1, value:[null,null,null,null] }, _msgid: "92e3f0cc.6d1c1"} </div></br>
+<div style="padding-left: 17px;"> {topic:"Input_hall#1", payload:{tag: "machine#1", path:"DB10,BYTE0..3",error:-1, value:[null,null,null,null] }, _msgid: "92e3f0cc.6d1c1"} </div></br>
 5) In any case of Error:  </br> 
 <div style="padding-left: 17px;"> error=-1, value=[null] </div></br>
 </script>
@@ -151,11 +152,11 @@ Example payload of output msg:</br>
 			s7Name: { value: "" },
 			topic: { value: "" },
 			name: { value: "" },
-			signalSetted: { value: false },
+			tagSetted: { value: false },
 			none: { value: false },
 			repeat: { value: "" },
 			once: { value: false }
-			//property:{signalSetted: {value:false},none:{value:false},repeat: {value:""},once: {value:false}}
+			//property:{tagSetted: {value:false},none:{value:false},repeat: {value:""},once: {value:false}}
 		},
 		inputs: 1,
 		outputs: 1,
@@ -171,7 +172,7 @@ Example payload of output msg:</br>
 
 			function updateList(configID) {
 				//emptyList
-				$('#node-input-signal option').remove();
+				$('#node-input-tag option').remove();
 
 				//get node-content by reference to an node id	
 				var configData = RED.nodes.node(configID);
@@ -183,23 +184,23 @@ Example payload of output msg:</br>
 
 				//iterate through payload
 				$.each(list, function (i, dataset) {
-					$("#node-input-signal").append($('<option/>', {
+					$("#node-input-tag").append($('<option/>', {
 						//selected: "selected",
 						value: JSON.stringify(dataset),
 						text: dataset.S7_Name
 					}));
 				});
 				//mark the selected item to find it the next time
-				$("#node-input-signal option").filter(function () { return $(this).val() == node.payload; }).attr('selected', true);
+				$("#node-input-tag option").filter(function () { return $(this).val() == node.payload; }).attr('selected', true);
 
 				//save the S7 Name
-				node.payload = $("#node-input-signal option:selected").val();
+				node.payload = $("#node-input-tag option:selected").val();
 
-				$("#node-input-signal").change(function () {
-					node.s7Name = $("#node-input-signal option:selected").text();//Do i need this?
-					$("#node-input-payload").val($("#node-input-signal option:selected").val());
+				$("#node-input-tag").change(function () {
+					node.s7Name = $("#node-input-tag option:selected").text();//Do i need this?
+					$("#node-input-payload").val($("#node-input-tag option:selected").val());
 					//mark the selected item to find it the next time
-					$("#node-input-signal option").filter(function () { return $(this).val() == node.payload; }).attr('selected', true);
+					$("#node-input-tag option").filter(function () { return $(this).val() == node.payload; }).attr('selected', true);
 				}).change();
 			};
 
@@ -314,10 +315,10 @@ Example payload of output msg:</br>
 	<label for="node-input-connection"><i class="fa fa-globe"> </i> Connection</label>
 	<input type="text" id="node-input-connection">
 </div>
-<!-- Element: Signal -->
+<!-- Element: Tag -->
 <div class="form-row">
-	<label for="node-input-signal"><i class="fa fa-envelope"></i> Signal</label>
-	<select id="node-input-signal" style="width: 70%"></select>
+	<label for="node-input-tag"><i class="fa fa-envelope"></i> Tag</label>
+	<select id="node-input-tag" style="width: 70%"></select>
 </div>
 
 <!-- Element: Topic -->
@@ -337,12 +338,12 @@ Example payload of output msg:</br>
 
 <script type="text/x-red" data-help-name="s7comm write">
 <p>The node writes data to Siemens devices such as S7-300/400/1200/1500.</p>
-<p>The signals to be written are setup in the node's connection selector. To write a value 
+<p>The tags to be written are setup in the node's connection selector. To write a value 
 input a message with msg.payload <em>value</em> as JSON object of type array:</p>
 <p style="padding-left: 17px;"><b> {"value":[42]}</b> </p>
 <p>The node outputs a msg.payload in the following format to confirm the write command:</p>
-<p style="padding-left: 17px;"><b>payload.signal :</b> Symbolic name of the signal as configured,</p>
-<p style="padding-left: 17px;"><b>payload.path :</b> Signal path of the signal,</p>
+<p style="padding-left: 17px;"><b>payload.tag :</b> Symbolic name of the tag as configured,</p>
+<p style="padding-left: 17px;"><b>payload.path :</b> Tag path of the tag,</p>
 <p style="padding-left: 17px;"><b>payload.error :</b> Error value: 0 = no error, -1 = writing failed,</p>
 <p style="padding-left: 17px;"><b>payload.value :</b> Value to be written</p>
 </br>
@@ -355,13 +356,13 @@ Node status:</p>
 </br>
 Example payload of output msg:</br>
 1) Writing true to I0.3, writing succeeded, Error equals to 0:</br>
-<div style="padding-left: 17px;">{topic:"Input_hall#1", payload:{signal: "machine#1", path:"I0.3",error:0, value:[true] }, "_msgid": "92e3f0cc.6d1c1"} </div></br>
+<div style="padding-left: 17px;">{topic:"Input_hall#1", payload:{tag: "machine#1", path:"I0.3",error:0, value:[true] }, "_msgid": "92e3f0cc.6d1c1"} </div></br>
 2) Writing 8 to IB1, writing succeeded, Error equals to 0:</br>
-<div style="padding-left: 17px;">{{topic:"Input_hall#1", payload:{signal: "machine#1", path:"IB1",error:0, value:[8] }, "_msgid": "92e3f0cc.6d1c1"} </div></br>
+<div style="padding-left: 17px;">{{topic:"Input_hall#1", payload:{tag: "machine#1", path:"IB1",error:0, value:[8] }, "_msgid": "92e3f0cc.6d1c1"} </div></br>
 3) Writing [1,2,3] to IB1-IB3, writing succeeded, Error equals to 0:</br>
-<div style="padding-left: 17px;">{{topic:"Input_hall#1", payload:{signal: "machine#1", path:"IB1..3",error:0, value:[1,2,3]}, _msgid: "92e3f0cc.6d1c1"} </div></br>
+<div style="padding-left: 17px;">{{topic:"Input_hall#1", payload:{tag: "machine#1", path:"IB1..3",error:0, value:[1,2,3]}, _msgid: "92e3f0cc.6d1c1"} </div></br>
 4) Writing 8 to IB1, Writing failed, Error equals to -1:</br>
-<div style="padding-left: 17px;">{{topic:"Input_hall#1", payload:{signal: "machine#1", path:"IB1",error:-1, value:[8]}, _msgid: "92e3f0cc.6d1c2"} </div></br>
+<div style="padding-left: 17px;">{{topic:"Input_hall#1", payload:{tag: "machine#1", path:"IB1",error:-1, value:[8]}, _msgid: "92e3f0cc.6d1c2"} </div></br>
 </script>
 
 <script type="text/javascript">
@@ -376,7 +377,7 @@ Example payload of output msg:</br>
 				topic: { value: "" },
 				//topic: {value:"",validate: RED.validators.regex(/^(#$|(\+|[^+#]*)(\/(\+|[^+#]*))*(\/(\+|#|[^+#]*))?$)/)},
 				name: { value: "" },
-				signalSetted: { value: false },
+				tagSetted: { value: false },
 			},
 			inputs: 1,
 			outputs: 1,
@@ -393,7 +394,7 @@ Example payload of output msg:</br>
 
 				function updateList(configID) {
 					//emptyList
-					$('#node-input-signal option').remove();
+					$('#node-input-tag option').remove();
 
 					//get node-content by reference to an node id	
 					var configData = RED.nodes.node(configID);
@@ -405,23 +406,23 @@ Example payload of output msg:</br>
 
 					//iterate through payload
 					$.each(list, function (i, dataset) {
-						$("#node-input-signal").append($('<option/>', {
+						$("#node-input-tag").append($('<option/>', {
 							//selected: "selected",
 							value: JSON.stringify(dataset),
 							text: dataset.S7_Name
 						}));
 					});
 					//mark the selected item to find it the next time
-					$("#node-input-signal option").filter(function () { return $(this).val() == node.payload; }).attr('selected', true);
+					$("#node-input-tag option").filter(function () { return $(this).val() == node.payload; }).attr('selected', true);
 
 					//save the S7 Name
-					node.payload = $("#node-input-signal option:selected").val();
+					node.payload = $("#node-input-tag option:selected").val();
 
-					$("#node-input-signal").change(function () {
-						node.s7Name = $("#node-input-signal option:selected").text();//Do i need this?
-						$("#node-input-payload").val($("#node-input-signal option:selected").val());
+					$("#node-input-tag").change(function () {
+						node.s7Name = $("#node-input-tag option:selected").text();//Do i need this?
+						$("#node-input-payload").val($("#node-input-tag option:selected").val());
 						//mark the selected item to find it the next time
-						$("#node-input-signal option").filter(function () { return $(this).val() == node.payload; }).attr('selected', true);
+						$("#node-input-tag option").filter(function () { return $(this).val() == node.payload; }).attr('selected', true);
 					}).change();
 				};
 
@@ -469,7 +470,7 @@ Example payload of output msg:</br>
 
 	<!-- Element: Box-->
 	<hr></hr> <!-- horizontal Line-->
-	<div>Signals: </div>	
+	<div>Tags: </div>	
 	<div class="form-row node-config-input-payload-container-row">
         <ol id="node-config-input-payload-container"></ol>
 	</div>
